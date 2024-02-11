@@ -3,6 +3,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { formatFile, formatFolder } from '$lib/prefixes';
 import { S3 } from '$lib/s3';
 import { ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3';
+import { redirect } from '@sveltejs/kit';
 
 interface Folder {
 	route: string;
@@ -14,8 +15,11 @@ interface File {
 	name: string;
 }
 
-export const load: PageServerLoad = async ({ params }) => {
-	const path = `${params.folder}/`;
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const user = locals.user;
+	if (!user) return redirect(302, '/login');
+
+	const path = `${user.id}/${params.folder}/`;
 
 	try {
 		const command = await new ListObjectsV2Command({
@@ -33,8 +37,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
 		if (folderResponse) {
 			folders = folderResponse.map((folder) => {
-				const prefix = folder.Prefix!;
-				const folderName = formatFolder(prefix);
+				const folderName = formatFolder(folder.Prefix!);
+				const prefix = folder.Prefix!.replace(`${user.id}/`, '');
 				return { route: `/${prefix}`, name: folderName };
 			});
 		}
@@ -56,11 +60,13 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, params }) => {
+	default: async ({ request, params, locals }) => {
 		const formData = await request.formData();
 		const folderName = formData.get('folder_name') as string;
 
-		const fullPath = `${params.folder}/${folderName}/`;
+		const userId = locals.user?.id;
+
+		const fullPath = `${userId}/${params.folder}/${folderName}/`;
 
 		const command = await new PutObjectCommand({
 			Bucket: R2_BUCKET_NAME,

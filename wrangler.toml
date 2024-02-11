@@ -1,0 +1,6 @@
+name = "svelte-s3"
+compatibility_date = "2024-02-10"
+[[d1_databases]]
+binding = "DB"
+database_name = "s3manager"
+database_id = "e17cafc7-1d93-4371-a625-87ae5a6c3b04"

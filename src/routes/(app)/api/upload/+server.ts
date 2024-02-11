@@ -22,7 +22,6 @@ export const POST: RequestHandler = async ({ request }) => {
 					Bucket: R2_BUCKET_NAME,
 					Key: `products/${name}`,
 					ContentType: type,
-
 					ACL: 'public-read'
 				}),
 				{
